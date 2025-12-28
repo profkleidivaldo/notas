@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Consulta Pedagógica do Estudante</title>
+
+<script src="crypto-js.min.js"></script>
+
+<style>
+body {
+  font-family: Arial, sans-serif;
+  max-width: 700px;
+  margin: auto;
+  padding: 20px;
+}
+
+h2 {
+  text-align: center;
+}
+
+select, input, button {
+  width: 100%;
+  padding: 10px;
+  margin: 8px 0;
+}
+
+button {
+  background: #1976d2;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #0d47a1;
+}
+
+.card {
+  border: 1px solid #ccc;
+  padding: 15px;
+  margin-top: 20px;
+}
+</style>
+</head>
+
+<body>
+
+<h2>Consulta de Notas e Fluência Leitora</h2>
+
+<label>Turma</label>
+<select id="turma">
+  <option value="">Selecione</option>
+  <option value="1anoa">1º Ano A</option>
+  <option value="2anob">2º Ano B</option>
+  <option value="5anoc">5º Ano C</option>
+</select>
+
+<label>RA do estudante</label>
+<input id="ra" placeholder="Digite o RA">
+
+<button onclick="consultar()">Consultar</button>
+
+<div id="resultado"></div>
+
+<script>
+let DADOS_TURMA = null;
+
+async function carregarTurma() {
+  const turma = document.getElementById("turma").value;
+  if (!turma) return;
+
+  // remove script antigo
+  const antigo = document.getElementById("dadosTurma");
+  if (antigo) antigo.remove();
+
+  return new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = `turmas/${turma}/dados.html`;
+    script.id = "dadosTurma";
+    script.onload = () => resolve();
+    script.onerror = () => reject();
+    document.body.appendChild(script);
+  });
+}
+
+async function consultar() {
+  const turma = document.getElementById("turma").value;
+  const ra = document.getElementById("ra").value.trim();
+  const resultado = document.getElementById("resultado");
+  resultado.innerHTML = "";
+
+  if (!turma || !ra) {
+    resultado.innerHTML = "Informe a turma e o RA.";
+    return;
+  }
+
+  try {
+    await carregarTurma();
+  } catch {
+    resultado.innerHTML = "Dados da turma não encontrados.";
+    return;
+  }
+
+  const registro = DADOS_TURMA.find(r => r.ra === ra);
+  if (!registro) {
+    resultado.innerHTML = "RA não encontrado nesta turma.";
+    return;
+  }
+
+  try {
+    const bytes = CryptoJS.AES.decrypt(registro.dados, ra);
+    const aluno = JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
+
+    resultado.innerHTML = `
+      <div class="card">
+        <h3>${aluno.nome}</h3>
+        <p><strong>Turma:</strong> ${aluno.turma}</p>
+
+        <h4>Notas</h4>
+        <ul>
+          <li>Matemática: ${aluno.notas.Matemática}</li>
+          <li>Português: ${aluno.notas.Português}</li>
+        </ul>
+
+        <h4>Fluência Leitora</h4>
+        <p><strong>Nível:</strong> ${aluno.fluencia.nivel}</p>
+        <p>${aluno.fluencia.observacoes}</p>
+      </div>
+    `;
+  } catch {
+    resultado.innerHTML = "Erro ao descriptografar os dados.";
+  }
+}
+</script>
+
+</body>
+</html>
