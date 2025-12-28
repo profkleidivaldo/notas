@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Espelho de Notas e Fluência</title>
+
+<script src="crypto-js.min.js"></script>
+
+<style>
+body {
+  font-family: Arial, sans-serif;
+  max-width: 1200px;
+  margin: auto;
+  padding: 20px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+th, td {
+  border: 1px solid #ccc;
+  padding: 6px;
+}
+
+th {
+  background: #f0f0f0;
+}
+
+input, select, textarea, button {
+  padding: 6px;
+  margin: 4px;
+}
+
+button {
+  background: #1976d2;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+</style>
+</head>
+
+<body>
+
+<h2>Espelho de Notas e Fluência Leitora</h2>
+
+<label>Turma (ex: 5anoc)</label>
+<input id="turma">
+
+<button onclick="adicionarLinha()">➕ Adicionar aluno</button>
+<button onclick="gerarHTML()">🔐 Gerar HTML criptografado</button>
+
+<table>
+<thead>
+<tr>
+  <th>RA</th>
+  <th>Nome</th>
+  <th>Matemática</th>
+  <th>Português</th>
+  <th>Fluência</th>
+  <th>Observação</th>
+</tr>
+</thead>
+<tbody id="tbody"></tbody>
+</table>
+
+<script>
+function adicionarLinha() {
+  const tr = document.createElement("tr");
+  tr.innerHTML = `
+    <td><input></td>
+    <td><input></td>
+    <td><input type="number" step="0.1"></td>
+    <td><input type="number" step="0.1"></td>
+    <td>
+      <select>
+        <option>Pré-leitor</option>
+        <option>Iniciante</option>
+        <option>Em desenvolvimento</option>
+        <option>Fluente</option>
+        <option>Fluente com compreensão</option>
+      </select>
+    </td>
+    <td><textarea rows="2"></textarea></td>
+  `;
+  document.getElementById("tbody").appendChild(tr);
+}
+
+function gerarHTML() {
+  const turma = document.getElementById("turma").value.trim();
+  if (!turma) {
+    alert("Informe a turma.");
+    return;
+  }
+
+  const registros = [];
+  document.querySelectorAll("#tbody tr").forEach(tr => {
+    const c = tr.querySelectorAll("input, select, textarea");
+    const ra = c[0].value.trim();
+    if (!ra) return;
+
+    const aluno = {
+      ra: ra,
+      nome: c[1].value,
+      turma: turma,
+      notas: {
+        Matemática: c[2].value,
+        Português: c[3].value
+      },
+      fluencia: {
+        nivel: c[4].value,
+        observacoes: c[5].value
+      }
+    };
+
+    const criptografado = CryptoJS.AES.encrypt(
+      JSON.stringify(aluno),
+      ra
+    ).toString();
+
+    registros.push({ ra: ra, dados: criptografado });
+  });
+
+  const htmlFinal = `
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"></head>
+<body>
+<script>
+const DADOS_TURMA = ${JSON.stringify(registros, null, 2)};
+<\/script>
+</body>
+</html>
+`;
+
+  const blob = new Blob([htmlFinal], { type: "text/html" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = "dados.html";
+  link.click();
+}
+</script>
+
+</body>
+</html>
