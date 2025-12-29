@@ -69,7 +69,7 @@ async function carregarTurma(turma) {
 
   return new Promise((resolve, reject) => {
     const script = document.createElement("script");
-    script.src = `${turma}/${turma}.html`; // <<< AJUSTE CRÍTICO
+   script.src = `${turma}/${turma}.js`;
     script.id = "dadosTurma";
     script.onload = () => resolve();
     script.onerror = () => reject();
