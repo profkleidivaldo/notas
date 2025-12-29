@@ -3,26 +3,43 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Consulta Pedagógica do Estudante</title>
+<title>Espelho de Notas</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 
 <style>
 body {
   font-family: Arial, sans-serif;
-  max-width: 700px;
+  max-width: 1300px;
   margin: auto;
   padding: 20px;
 }
 
-h2 {
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+  font-size: 14px;
+}
+
+th, td {
+  border: 1px solid #ccc;
+  padding: 5px;
   text-align: center;
 }
 
-select, input, button {
+th {
+  background: #f0f0f0;
+}
+
+input, select, textarea, button {
   width: 100%;
-  padding: 10px;
-  margin: 8px 0;
+  padding: 6px;
+  box-sizing: border-box;
+}
+
+textarea {
+  resize: vertical;
 }
 
 button {
@@ -30,109 +47,125 @@ button {
   color: white;
   border: none;
   cursor: pointer;
+  padding: 10px;
+  margin-top: 5px;
 }
 
 button:hover {
-  background: #0d47a1;
-}
-
-.card {
-  border: 1px solid #ccc;
-  padding: 15px;
-  margin-top: 20px;
+  background: #125aa0;
 }
 </style>
 </head>
 
 <body>
 
-<h2>Consulta de Notas e Fluência Leitora</h2>
+<h2>Espelho de Notas e Frequência</h2>
 
 <label>Turma</label>
-<select id="turma">
-  <option value="">Selecione</option>
-  <option value="5A">5A</option>
+<input id="turma" placeholder="Ex: 5A">
+
+<label>Bimestre</label>
+<select id="bimestre">
+  <option value="1º Bimestre">1º Bimestre</option>
+  <option value="2º Bimestre">2º Bimestre</option>
+  <option value="3º Bimestre">3º Bimestre</option>
+  <option value="4º Bimestre">4º Bimestre</option>
 </select>
 
-<label>RA do estudante</label>
-<input id="ra" placeholder="Digite o RA">
+<label>Colar dados do Excel</label>
+<textarea id="excelInput" rows="4"
+placeholder="RA | Nome | LP | Arte | EF | ER | MAT | GEO | HIS | CIE | Faltas"></textarea>
 
-<button onclick="consultar()">Consultar</button>
+<button onclick="importarExcel()">📥 Importar do Excel</button>
+<button onclick="adicionarLinha()">➕ Linha manual</button>
+<button onclick="gerarJS()">⬇️ Gerar arquivo da turma</button>
 
-<div id="resultado"></div>
+<table>
+<thead>
+<tr>
+  <th>RA</th>
+  <th>Estudante</th>
+  <th>LP</th>
+  <th>Arte</th>
+  <th>Ed. Física</th>
+  <th>Ens. Religioso</th>
+  <th>Mat.</th>
+  <th>Geo.</th>
+  <th>Hist.</th>
+  <th>Ciên.</th>
+  <th>Faltas</th>
+</tr>
+</thead>
+<tbody id="tbody"></tbody>
+</table>
 
 <script>
-async function carregarTurma(turma) {
-  // remove script anterior
-  const antigo = document.getElementById("dadosTurma");
-  if (antigo) antigo.remove();
-
-  return new Promise((resolve, reject) => {
-    const script = document.createElement("script");
-   script.src = `${turma}/${turma}.js`;
-    script.id = "dadosTurma";
-    script.onload = () => resolve();
-    script.onerror = () => reject();
-    document.body.appendChild(script);
-  });
+function adicionarLinha(valores = []) {
+  const tr = document.createElement("tr");
+  tr.innerHTML = `
+    <td><input value="${valores[0]||""}"></td>
+    <td><input value="${valores[1]||""}"></td>
+    <td><input type="number" step="0.1" value="${valores[2]||""}"></td>
+    <td><input type="number" step="0.1" value="${valores[3]||""}"></td>
+    <td><input type="number" step="0.1" value="${valores[4]||""}"></td>
+    <td><input type="number" step="0.1" value="${valores[5]||""}"></td>
+    <td><input type="number" step="0.1" value="${valores[6]||""}"></td>
+    <td><input type="number" step="0.1" value="${valores[7]||""}"></td>
+    <td><input type="number" step="0.1" value="${valores[8]||""}"></td>
+    <td><input type="number" step="0.1" value="${valores[9]||""}"></td>
+    <td><input type="number" value="${valores[10]||""}"></td>
+  `;
+  document.getElementById("tbody").appendChild(tr);
 }
 
-async function consultar() {
-  const turma = document.getElementById("turma").value;
-  const ra = document.getElementById("ra").value.trim();
-  const resultado = document.getElementById("resultado");
-  resultado.innerHTML = "";
+function importarExcel() {
+  const linhas = document.getElementById("excelInput").value.trim().split(/\r?\n/);
+  linhas.forEach(l => adicionarLinha(l.split("\t")));
+  document.getElementById("excelInput").value = "";
+}
 
-  if (!turma || !ra) {
-    resultado.innerHTML = "Informe a turma e o RA.";
-    return;
-  }
+function gerarJS() {
+  const turma = document.getElementById("turma").value.trim();
+  const bimestre = document.getElementById("bimestre").value;
+  if (!turma) return alert("Informe a turma.");
 
-  try {
-    await carregarTurma(turma);
-  } catch {
-    resultado.innerHTML = "Arquivo da turma não encontrado.";
-    return;
-  }
+  const registros = [];
 
-  if (typeof DADOS_TURMA === "undefined") {
-    resultado.innerHTML = "Arquivo carregado, mas dados inválidos.";
-    return;
-  }
+  document.querySelectorAll("#tbody tr").forEach(tr => {
+    const c = tr.querySelectorAll("input");
+    if (!c[0].value) return;
 
-  const registro = DADOS_TURMA.find(r => r.ra === ra);
-  if (!registro) {
-    resultado.innerHTML = "RA não encontrado nesta turma.";
-    return;
-  }
+    const aluno = {
+      ra: c[0].value,
+      nome: c[1].value,
+      turma,
+      bimestre,
+      notas: {
+        LP: c[2].value,
+        ARTE: c[3].value,
+        EF: c[4].value,
+        ER: c[5].value,
+        MAT: c[6].value,
+        GEO: c[7].value,
+        HIS: c[8].value,
+        CIE: c[9].value
+      },
+      faltas: c[10].value
+    };
 
-  try {
-    const bytes = CryptoJS.AES.decrypt(registro.dados, ra);
-    const aluno = JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
+    const dados = CryptoJS.AES.encrypt(JSON.stringify(aluno), aluno.ra).toString();
+    registros.push({ ra: aluno.ra, dados });
+  });
 
-    resultado.innerHTML = `
-      <div class="card">
-        <h3>${aluno.nome}</h3>
-        <p><strong>Turma:</strong> ${aluno.turma}</p>
+  const js =
+`// Turma ${turma}
+window.DADOS_TURMA = ${JSON.stringify(registros, null, 2)};`;
 
-        <h4>Notas</h4>
-        <ul>
-          <li>Matemática: ${aluno.notas.MAT || "-"}</li>
-          <li>Língua Portuguesa: ${aluno.notas.LP || "-"}</li>
-          <li>História: ${aluno.notas.HIS || "-"}</li>
-          <li>Geografia: ${aluno.notas.GEO || "-"}</li>
-          <li>Ciências: ${aluno.notas.CIE || "-"}</li>
-          <li>Educação Física: ${aluno.notas.EF || "-"}</li>
-        </ul>
-
-        <h4>Fluência Leitora</h4>
-        <p><strong>Nível:</strong> ${aluno.fluencia.nivel}</p>
-        <p>${aluno.fluencia.observacoes || ""}</p>
-      </div>
-    `;
-  } catch {
-    resultado.innerHTML = "Erro ao descriptografar. Verifique o RA.";
-  }
+  const blob = new Blob([js], { type: "application/javascript" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `${turma}.js`;
+  a.click();
 }
 </script>
 
