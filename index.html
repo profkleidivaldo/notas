@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Consulta Pedagógica do Estudante</title>
 
-<script src="crypto-js.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 
 <style>
 body {
@@ -51,9 +51,8 @@ button:hover {
 <label>Turma</label>
 <select id="turma">
   <option value="">Selecione</option>
-  <option value="1A">1A</option>
-  <option value="2A">2A</option>
-  <option value="5A">5A</option>
+  <option value="5anoc">5anoc</option>
+  <option value="5a">5a</option>
 </select>
 
 <label>RA do estudante</label>
@@ -64,19 +63,14 @@ button:hover {
 <div id="resultado"></div>
 
 <script>
-let DADOS_TURMA = null;
-
-async function carregarTurma() {
-  const turma = document.getElementById("turma").value;
-  if (!turma) return;
-
-  // remove script antigo
+async function carregarTurma(turma) {
+  // remove script anterior
   const antigo = document.getElementById("dadosTurma");
   if (antigo) antigo.remove();
 
   return new Promise((resolve, reject) => {
     const script = document.createElement("script");
-    script.src = `turmas/${turma}/dados.html`;
+    script.src = `dados-${turma}.html`; // arquivo gerado pelo espelho
     script.id = "dadosTurma";
     script.onload = () => resolve();
     script.onerror = () => reject();
@@ -96,9 +90,14 @@ async function consultar() {
   }
 
   try {
-    await carregarTurma();
+    await carregarTurma(turma);
   } catch {
-    resultado.innerHTML = "Dados da turma não encontrados.";
+    resultado.innerHTML = "Arquivo de dados da turma não encontrado.";
+    return;
+  }
+
+  if (typeof DADOS_TURMA === "undefined") {
+    resultado.innerHTML = "Dados da turma inválidos.";
     return;
   }
 
@@ -119,17 +118,21 @@ async function consultar() {
 
         <h4>Notas</h4>
         <ul>
-          <li>Matemática: ${aluno.notas.Matemática}</li>
-          <li>Português: ${aluno.notas.Português}</li>
+          <li>Matemática: ${aluno.notas.MAT || "-"}</li>
+          <li>Língua Portuguesa: ${aluno.notas.LP || "-"}</li>
+          <li>História: ${aluno.notas.HIS || "-"}</li>
+          <li>Geografia: ${aluno.notas.GEO || "-"}</li>
+          <li>Ciências: ${aluno.notas.CIE || "-"}</li>
+          <li>Educação Física: ${aluno.notas.EF || "-"}</li>
         </ul>
 
         <h4>Fluência Leitora</h4>
         <p><strong>Nível:</strong> ${aluno.fluencia.nivel}</p>
-        <p>${aluno.fluencia.observacoes}</p>
+        <p>${aluno.fluencia.observacoes || ""}</p>
       </div>
     `;
   } catch {
-    resultado.innerHTML = "Erro ao descriptografar os dados.";
+    resultado.innerHTML = "Erro ao descriptografar os dados. Verifique o RA.";
   }
 }
 </script>
