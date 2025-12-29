@@ -51,7 +51,6 @@ button:hover {
 <label>Turma</label>
 <select id="turma">
   <option value="">Selecione</option>
-  <option value="5anoc">5anoc</option>
   <option value="5A">5A</option>
 </select>
 
@@ -70,7 +69,7 @@ async function carregarTurma(turma) {
 
   return new Promise((resolve, reject) => {
     const script = document.createElement("script");
-    script.src = `dados-${turma}.html`; // arquivo gerado pelo espelho
+    script.src = `${turma}/${turma}.html`; // <<< AJUSTE CRÍTICO
     script.id = "dadosTurma";
     script.onload = () => resolve();
     script.onerror = () => reject();
@@ -92,12 +91,12 @@ async function consultar() {
   try {
     await carregarTurma(turma);
   } catch {
-    resultado.innerHTML = "Arquivo de dados da turma não encontrado.";
+    resultado.innerHTML = "Arquivo da turma não encontrado.";
     return;
   }
 
   if (typeof DADOS_TURMA === "undefined") {
-    resultado.innerHTML = "Dados da turma inválidos.";
+    resultado.innerHTML = "Arquivo carregado, mas dados inválidos.";
     return;
   }
 
@@ -132,7 +131,7 @@ async function consultar() {
       </div>
     `;
   } catch {
-    resultado.innerHTML = "Erro ao descriptografar os dados. Verifique o RA.";
+    resultado.innerHTML = "Erro ao descriptografar. Verifique o RA.";
   }
 }
 </script>
