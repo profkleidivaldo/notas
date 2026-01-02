@@ -2,103 +2,117 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
+<title>Consulta Escolar</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Consulta do Estudante</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 
 <style>
-body {
-  font-family: Arial, sans-serif;
-  max-width: 700px;
-  margin: auto;
-  padding: 20px;
+body{
+  font-family:Arial, sans-serif;
+  max-width:720px;
+  margin:auto;
+  padding:20px;
 }
-
-button {
-  background: #1976d2;
-  color: white;
-  border: none;
-  padding: 10px;
-  width: 100%;
-  cursor: pointer;
+input, button{
+  width:100%;
+  padding:10px;
+  margin-top:10px;
+  font-size:16px;
 }
-
-.card {
-  border: 1px solid #ccc;
-  padding: 15px;
-  margin-top: 20px;
+button{
+  background:#2563eb;
+  color:#fff;
+  border:none;
+  cursor:pointer;
+}
+.card{
+  border:1px solid #ccc;
+  padding:15px;
+  margin-top:20px;
+  border-radius:8px;
+}
+h3{
+  margin-top:0;
 }
 </style>
 </head>
 
 <body>
 
-<h2>Consulta de Notas</h2>
+<h2>Consulta de Notas do Estudante</h2>
 
-<label>Turma</label>
-<select id="turma">
-  <option value="">Selecione</option>
-  <option value="5A">5A</option>
-</select>
-
-<label>RA</label>
-<input id="ra">
-
+<input id="turma" placeholder="Digite a turma (ex: 5A)">
+<input id="nome" placeholder="Digite o nome do estudante">
 <button onclick="consultar()">Consultar</button>
 
 <div id="resultado"></div>
 
 <script>
-async function carregarTurma(turma) {
-  return new Promise((resolve, reject) => {
-    const s = document.createElement("script");
-    s.src = `${turma}/${turma}.js`;
-    s.onload = resolve;
-    s.onerror = reject;
-    document.body.appendChild(s);
-  });
+let DADOS_TURMA = null;
+
+function carregarArquivoTurma(turma, callback){
+  const script = document.createElement("script");
+  script.src = `${turma}/dados.js`;
+  script.onload = callback;
+  script.onerror = () => {
+    resultado.innerHTML = "Arquivo da turma não encontrado.";
+  };
+  document.body.appendChild(script);
 }
 
-async function consultar() {
-  const turma = document.getElementById("turma").value;
-  const ra = document.getElementById("ra").value.trim();
-  const r = document.getElementById("resultado");
-  r.innerHTML = "";
+function consultar(){
+  const turma = document.getElementById("turma").value.trim();
+  const nomeInput = document.getElementById("nome").value.trim().toLowerCase();
+  const resultado = document.getElementById("resultado");
 
-  try {
-    await carregarTurma(turma);
-  } catch {
-    return r.innerHTML = "Arquivo da turma não encontrado.";
+  if(!turma || !nomeInput){
+    resultado.innerHTML = "Informe a turma e o nome do estudante.";
+    return;
   }
 
-  const registro = DADOS_TURMA.find(a => a.ra === ra);
-  if (!registro) return r.innerHTML = "RA não encontrado.";
+  carregarArquivoTurma(turma, () => {
+    if(!Array.isArray(DADOS_TURMA)){
+      resultado.innerHTML = "Arquivo carregado, mas dados inválidos.";
+      return;
+    }
 
-  const aluno = JSON.parse(
-    CryptoJS.AES.decrypt(registro.dados, ra).toString(CryptoJS.enc.Utf8)
-  );
+    const registro = DADOS_TURMA.find(
+      a => a.nome.toLowerCase() === nomeInput
+    );
 
-  r.innerHTML = `
-    <div class="card">
-      <h3>${aluno.nome}</h3>
-      <p><strong>Turma:</strong> ${aluno.turma}</p>
-      <p><strong>${aluno.bimestre}</strong></p>
+    if(!registro){
+      resultado.innerHTML = "Estudante não encontrado.";
+      return;
+    }
 
-      <ul>
-        <li>Língua Portuguesa: ${aluno.notas.LP}</li>
-        <li>Arte: ${aluno.notas.ARTE}</li>
-        <li>Educação Física: ${aluno.notas.EF}</li>
-        <li>Ensino Religioso: ${aluno.notas.ER}</li>
-        <li>Matemática: ${aluno.notas.MAT}</li>
-        <li>Geografia: ${aluno.notas.GEO}</li>
-        <li>História: ${aluno.notas.HIS}</li>
-        <li>Ciências: ${aluno.notas.CIE}</li>
-      </ul>
+    try{
+      const bytes = CryptoJS.AES.decrypt(registro.dados, nomeInput);
+      const dados = JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
 
-      <p><strong>Total de faltas:</strong> ${aluno.faltas}</p>
-    </div>
-  `;
+      resultado.innerHTML = `
+      <div class="card">
+        <h3>${dados.nome}</h3>
+        <strong>Turma:</strong> ${dados.turma}<br><br>
+
+        <h4>Médias Anuais</h4>
+        <ul>
+          <li>Língua Portuguesa: ${dados.medias.LP}</li>
+          <li>Arte: ${dados.medias.ARTE}</li>
+          <li>Educação Física: ${dados.medias.EF}</li>
+          <li>Ensino Religioso: ${dados.medias.ER}</li>
+          <li>Matemática: ${dados.medias.MAT}</li>
+          <li>Geografia: ${dados.medias.GEO}</li>
+          <li>História: ${dados.medias.HIS}</li>
+          <li>Ciências: ${dados.medias.CIE}</li>
+        </ul>
+
+        <strong>Total de Faltas:</strong> ${dados.faltas}
+      </div>`;
+    }catch{
+      resultado.innerHTML = "Erro ao descriptografar os dados.";
+    }
+  });
 }
 </script>
 
