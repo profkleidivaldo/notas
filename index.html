@@ -40,7 +40,7 @@ button{
 <h2>Consulta de Notas do Estudante</h2>
 
 <input id="turma" placeholder="Digite a turma (ex: 5A)">
-<input id="nome" placeholder="Digite o nome do estudante">
+<input id="nome" placeholder="Digite o nome completo do estudante">
 <button onclick="consultar()">Consultar</button>
 
 <div id="resultado"></div>
@@ -49,15 +49,13 @@ button{
 let DADOS_TURMA = null;
 
 function carregarArquivoTurma(turma, callback){
-  // remove script anterior se existir
   const antigo = document.getElementById("dadosTurma");
   if(antigo) antigo.remove();
 
+  const turmaNormalizada = turma.trim().toUpperCase();
   const script = document.createElement("script");
   script.id = "dadosTurma";
-
-  // 🔹 CAMINHO CORRETO PARA O SEU GITHUB
-  script.src = `notas/${turma}/dados.js`;
+  script.src = `${turmaNormalizada}/dados.js`;
 
   script.onload = callback;
   script.onerror = () => {
@@ -69,7 +67,7 @@ function carregarArquivoTurma(turma, callback){
 }
 
 function consultar(){
-  const turma = document.getElementById("turma").value.trim();
+  const turma = document.getElementById("turma").value;
   const nomeDigitado = document.getElementById("nome").value.trim().toLowerCase();
   const resultado = document.getElementById("resultado");
 
@@ -83,7 +81,7 @@ function consultar(){
   carregarArquivoTurma(turma, () => {
 
     if(!Array.isArray(DADOS_TURMA)){
-      resultado.innerHTML = "Arquivo carregado, mas dados inválidos.";
+      resultado.innerHTML = "Dados da turma inválidos.";
       return;
     }
 
@@ -117,7 +115,7 @@ function consultar(){
           <li>Ciências: ${dados.medias.CIE}</li>
         </ul>
 
-        <strong>Total de Faltas:</strong> ${dados.faltas}
+        <strong>Total de Faltas:</strong> ${dados.faltas || "-"}
       </div>`;
     }catch{
       resultado.innerHTML = "Erro ao descriptografar os dados.";
