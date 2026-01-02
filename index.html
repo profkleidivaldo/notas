@@ -32,9 +32,6 @@ button{
   margin-top:20px;
   border-radius:8px;
 }
-h3{
-  margin-top:0;
-}
 </style>
 </head>
 
@@ -52,42 +49,55 @@ h3{
 let DADOS_TURMA = null;
 
 function carregarArquivoTurma(turma, callback){
+  // remove script anterior se existir
+  const antigo = document.getElementById("dadosTurma");
+  if(antigo) antigo.remove();
+
   const script = document.createElement("script");
-  script.src = `${turma}/dados.js`;
+  script.id = "dadosTurma";
+
+  // 🔹 CAMINHO CORRETO PARA O SEU GITHUB
+  script.src = `notas/${turma}/dados.js`;
+
   script.onload = callback;
   script.onerror = () => {
-    resultado.innerHTML = "Arquivo da turma não encontrado.";
+    document.getElementById("resultado").innerHTML =
+      "Arquivo da turma não encontrado.";
   };
+
   document.body.appendChild(script);
 }
 
 function consultar(){
   const turma = document.getElementById("turma").value.trim();
-  const nomeInput = document.getElementById("nome").value.trim().toLowerCase();
+  const nomeDigitado = document.getElementById("nome").value.trim().toLowerCase();
   const resultado = document.getElementById("resultado");
 
-  if(!turma || !nomeInput){
+  resultado.innerHTML = "";
+
+  if(!turma || !nomeDigitado){
     resultado.innerHTML = "Informe a turma e o nome do estudante.";
     return;
   }
 
   carregarArquivoTurma(turma, () => {
+
     if(!Array.isArray(DADOS_TURMA)){
       resultado.innerHTML = "Arquivo carregado, mas dados inválidos.";
       return;
     }
 
-    const registro = DADOS_TURMA.find(
-      a => a.nome.toLowerCase() === nomeInput
+    const aluno = DADOS_TURMA.find(
+      a => a.nome.toLowerCase() === nomeDigitado
     );
 
-    if(!registro){
+    if(!aluno){
       resultado.innerHTML = "Estudante não encontrado.";
       return;
     }
 
     try{
-      const bytes = CryptoJS.AES.decrypt(registro.dados, nomeInput);
+      const bytes = CryptoJS.AES.decrypt(aluno.dados, nomeDigitado);
       const dados = JSON.parse(bytes.toString(CryptoJS.enc.Utf8));
 
       resultado.innerHTML = `
