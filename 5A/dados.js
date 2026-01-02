@@ -1,4 +1,4 @@
-window.DADOS_TURMA=[
+window.DADOS_TURMA =[
   {
     "nome": "Allice Victória Lacerda",
     "dados": "U2FsdGVkX1+qnfVV8e+niHf7Fvu7hOWmbhzCkvRoDTdmr9OC32kfc0DKFUwp9Et124ouQKgh17DHRHBt8B/RJ387NeNE3AC3GIy0+7b74JzYhZtlZwcU6CKbPeu5fJCuN5SNp9kkFBQVlPFdu6quPxMvndGLl/vnd6fUoalVTzRJZbf9C6r32Y9sZVd3m5pa7H5+5pimoskfkAo/A/+iAQm8jH5kj+WH3Uj19LyO8wOXc7YEg35jPsf8tl1W/FBs"
